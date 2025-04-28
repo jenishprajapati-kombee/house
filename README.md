@@ -10,11 +10,11 @@ House View is a web application built with Laravel 11 and Filament v3, designed 
 *   🔐 **Secure Admin Login:** Dedicated admin panel access.
 *   🏠 **House Management:** Full CRUD operations (Create, Read, Update, Delete) for house listings.
 *   📝 **Detailed Listings:** Manage property details like address, price, status (For Sale/For Rent), number of bedrooms/bathrooms, description, images, etc.
-*   📊 **Admin Dashboard:** Overview widgets summarizing key information (e.g., total listings, recent additions).
-*   👤 **(Optional) User Management:** Admins might also manage registered user accounts.
+*   📊 **Admin Dashboard:** Overview widgets summarizing key information (e.g., total listings, recent additions - like House Creation Chart, Houses By City Chart, Stats Overview).
+*   👤 **User Management:** Admins can manage registered user accounts (Create, Read, Update, Delete).
 
 **User Portal:**
-*   🔑 **User Registration & Login:** Secure user account creation and authentication (potentially using Laravel Passport for API tokens if needed, or standard web sessions).
+*   🔑 **User Registration & Login:** Secure user account creation and authentication using Laravel's standard web authentication.
 *   👀 **View House Listings:** Browse published properties with filtering/searching capabilities (if implemented).
 *   ℹ️ **View House Details:** Access detailed information about specific properties.
 *   👤 **User Dashboard:** A simple dashboard for registered users (e.g., view profile info, saved listings - if implemented).
@@ -24,7 +24,7 @@ House View is a web application built with Laravel 11 and Filament v3, designed 
 *   ⚡ **Modern Stack:** Built with Laravel 11 & PHP 8.2+.
 *   🎨 **Admin UI:** Clean and efficient admin interface powered by Filament v3.
 *   📱 **Responsive Design:** Accessible on various devices (thanks to Filament/Tailwind).
-*   🔐 **API Ready (Optional):** Laravel Passport included for potential future API integrations or if user auth is API-driven.
+*   🔐 **API Ready (Optional):** Laravel Passport included for potential future API integrations if needed.
 
 ---
 
@@ -32,7 +32,7 @@ House View is a web application built with Laravel 11 and Filament v3, designed 
 
 *   **Framework**: Laravel 11 (PHP 8.2+)
 *   **Admin Panel**: Filament v3
-*   **API Authentication**: Laravel Passport (if used for user auth or APIs)
+*   **API Authentication**: Laravel Passport (Installed, usable for future APIs)
 *   **Database**: MySQL / PostgreSQL (Configurable)
 *   **Frontend (User)**: Blade Templating
 *   **Styling**: Tailwind CSS (via Filament & potentially for user views)
@@ -55,7 +55,7 @@ House View is a web application built with Laravel 11 and Filament v3, designed 
 ![User House Listing Page](public/images/usersviewlist.png)
 
 ### ℹ️ User House Detail View
-![User House Detail Page](public/images/usersviewonly.png)
+![User House Detail Page](public/images/userviewonly.png)
 
 ### 👤 User Dashboard
 ![User Dashboard](public/images/userdashboardview.png)
@@ -72,17 +72,17 @@ House View is a web application built with Laravel 11 and Filament v3, designed 
 ### 📊 Admin House Listing View (Filament)
 ![Admin Dashboard](public/images/adminpanel.png)
 
-### 📋 Admin House Management (Filament Resource)
-![Admin House List](public/images/create1.png)
+### 📋 Admin House Management (Filament Resource) - Create Form Part 1
+![Admin House Create Form 1](public/images/create1.png)
 
-### 📋 Admin House Management (Filament Resource)
-![Admin House List](public/images/create2.png)
+### 📋 Admin House Management (Filament Resource) - Create Form Part 2
+![Admin House Create Form 2](public/images/create2.png)
 
-### 📋 Admin House Management (Filament Resource)
-![Admin House List](public/images/create3.png)
+### 📋 Admin House Management (Filament Resource) - Create Form Part 3
+![Admin House Create Form 3](public/images/create3.png)
 
-### 📋 Admin House Management (Filament Resource)
-![Admin House List](public/images/create4.png)
+### 📋 Admin House Management (Filament Resource) - Create Form Part 4
+![Admin House Create Form 4](public/images/create4.png)
 
 ### ✏️ Admin House Edit Form (Filament Resource)
 ![Admin House Edit Form](public/images/create5.png)
@@ -139,13 +139,13 @@ House View is a web application built with Laravel 11 and Filament v3, designed 
     ```
 
 6.  **Run Database Migrations:**
-    This will create the necessary tables, including users, password resets, Filament tables, Passport tables, and your `houses` table (assuming you have a migration for it).
+    This will create the necessary tables, including users, password resets, Filament tables, Passport tables (if installed), and your `houses` table.
     ```bash
     php artisan migrate
     ```
 
-7.  **Install Laravel Passport (If used for User Auth/API):**
-    *Note: If you are only using Filament's built-in auth for the admin panel and Laravel's standard web auth for users, you might not strictly need Passport unless you plan APIs. If you installed it, run these commands.*
+7.  **Install Laravel Passport (If needed for future APIs):**
+    *Note: Based on the structure, user registration seems standard. Passport might only be needed if you plan dedicated API endpoints later. If installed, run these commands.*
     ```bash
     # Skip 'composer require' if already installed via composer.json
     # composer require laravel/passport
@@ -157,7 +157,7 @@ House View is a web application built with Laravel 11 and Filament v3, designed 
     php artisan passport:install --uuids
     ```
     *   Ensure your `App\Models\User` model uses the `Laravel\Passport\HasApiTokens` trait if you intend to use Passport for API token authentication.
-    *   Ensure `App\Providers\AuthServiceProvider` registers Passport routes: `Passport::routes();`
+    *   Ensure `App\Providers\AuthServiceProvider` registers Passport routes: `Passport::routes();` (only if actively using Passport).
 
 8.  **Install Filament:**
     *Note: If Filament is already installed via `composer.json`, you might just need the install command.*
@@ -186,64 +186,81 @@ House View is a web application built with Laravel 11 and Filament v3, designed 
         'name' => 'Admin User',
         'email' => 'admin@example.com',
         'password' => bcrypt('password'), // Change 'password' to a secure password
-        // Add any other required fields, e.g., 'is_admin' => true
+        // Add any other required fields, e.g., 'is_admin' => true if using a flag
     ]);
     ```
-    *   Ensure your `AdminPanelProvider.php` correctly authorizes users (e.g., checking the `is_admin` flag or using a role/permission).
+    *   Ensure your `AdminPanelProvider.php` correctly authorizes users (e.g., checking the `is_admin` flag or using a role/permission, or implementing the `FilamentUser` interface on your User model). See Filament docs for access control.
 
 10. **(Optional) Seed Database:**
     If you have database seeders to populate initial data (e.g., sample houses, user roles), run:
     ```bash
     php artisan db:seed
     ```
+
 11. **## 📁 Project Structure:**
+    ```markdown
+    .
+    ├── app/
+    │   ├── Enums/
+    │   │   ├── ListingStatus.php
+    │   │   ├── ListingType.php
+    │   │   └── RentalPeriod.php
+    │   ├── Filament/
+    │   │   └── Resources/
+    │   │       ├── HouseResource/
+    │   │       │   ├── Pages/
+    │   │       │   │   ├── CreateHouse.php
+    │   │       │   │   ├── EditHouse.php
+    │   │       │   │   ├── ListHouses.php
+    │   │       │   │   └── ViewHouse.php
+    │   │       │   └── Widgets/
+    │   │       │       ├── HouseCreationChart.php
+    │   │       │       ├── HousesByCityChart.php
+    │   │       │       └── HouseStatsOverview.php
+    │   │       ├── UserResource/
+    │   │       │   └── Pages/
+    │   │       │       ├── CreateUser.php
+    │   │       │       ├── EditUser.php
+    │   │       │       ├── ListUsers.php
+    │   │       │       └── ViewUser.php
+    │   │       ├── HouseResource.php
+    │   │       └── UserResource.php
+    │   ├── Http/
+    │   │   └── Controllers/
+    │   │       ├── Auth/
+    │   │       │   └── RegisterController.php
+    │   │       └── Controller.php
+    │   ├── Models/
+    │   │   ├── House.php
+    │   │   └── User.php
+    │   ├── Policies/                 # (Policies for authorization - Content not shown)
+    │   └── Providers/                # (Service Providers - Content not shown)
+    ├── bootstrap/                    # (Standard Laravel directory - Content not shown)
+    ├── config/                       # (Standard Laravel directory - Content not shown)
+    ├── database/                     # (Standard Laravel directory - Content not shown)
+    ├── public/                       # (Standard Laravel directory - Content not shown)
+    ├── resources/                    # (Standard Laravel directory - Content not shown)
+    ├── routes/                       # (Standard Laravel directory - Content not shown)
+    ├── storage/                      # (Standard Laravel directory - Content not shown)
+    ├── tests/                        # (Standard Laravel directory - Content not shown)
+    ├── vendor/                       # (Composer dependencies - Content not shown)
+    ├── .editorconfig
+    ├── .env                          # (Local environment variables - DO NOT COMMIT)
+    ├── .env.example                  # (Example environment file)
+    ├── .gitattributes
+    ├── .gitignore
+    ├── .rnd                          # (Uncommon file, purpose unknown from screenshot)
+    ├── artisan                       # (Laravel Artisan console tool)
+    ├── composer.json                 # (PHP dependencies)
+    ├── composer.lock                 # (Locked PHP dependencies)
+    ├── package.json                  # (Node.js dependencies)
+    ├── phpunit.xml                   # (PHPUnit configuration)
+    ├── README.md                     # (This file!)
+    └── vite.config.js                # (Vite asset bundling configuration)
+
     ```
-├── app
-│   ├── Enums
-│   │   ├── ListingStatus.php
-│   │   ├── ListingType.php
-│   │   └── RentalPeriod.php
-│   ├── Filament
-│   │   └── Resources
-│   │       ├── HouseResource
-│   │       │   ├── Pages
-│   │       │   └── Widgets
-│   │       ├── HouseResource.php
-│   │       ├── UserResource
-│   │       │   └── Pages
-│   │       └── UserResource.php
-│   └── Http
-│       └── Controllers
-│           ├── Auth
-│           ├── Controller.php
-│           ├── Models
-│           ├── Policies
-│           └── Providers
-├── bootstrap
-├── config
-├── database
-├── public
-├── resources
-├── routes
-├── storage
-├── tests
-├── vendor
-├── .editorconfig
-├── .env
-├── .env.example
-├── .gitattributes
-├── .gitignore
-├── .md
-├── artisan
-├── composer.json
-├── composer.lock
-├── package.json
-├── phpunit.xml
-├── README.md
-└── vite.config.js
-    ```
-    
-    
+    *(Note: Contents of standard Laravel directories are collapsed for brevity)*
+
 12. **Serve the Application:**
     ```bash
     php artisan serve
@@ -268,6 +285,7 @@ Here are some common Artisan commands provided by Filament v3 for creating compo
     *   Generates List, Create, Edit, and View pages for a Model. This is the core for CRUD operations.
     *   `php artisan make:filament-resource <ResourceName> --generate`
     *   Example: `php artisan make:filament-resource House --generate` (This assumes you have an `App\Models\House` model).
+    *   Example: `php artisan make:filament-resource User --generate`
 
 *   **Create a Page:**
     *   For custom pages within your Filament panel that aren't tied directly to a model's CRUD operations.
@@ -277,8 +295,8 @@ Here are some common Artisan commands provided by Filament v3 for creating compo
 *   **Create a Widget:**
     *   For displaying stats or information on dashboards.
     *   `php artisan make:filament-widget <WidgetName> --panel=<PanelID>`
-    *   Example (Stats Overview Widget): `php artisan make:filament-widget StatsOverview --stats-overview --panel=admin`
-    *   Example (Chart Widget): `php artisan make:filament-widget HousesChart --chart --panel=admin`
+    *   Example (Stats Overview Widget): `php artisan make:filament-widget HouseStatsOverview --stats-overview --panel=admin`
+    *   Example (Chart Widget): `php artisan make:filament-widget HouseCreationChart --chart --panel=admin`
     *   Example (Table Widget): `php artisan make:filament-widget LatestHouses --table --panel=admin`
 
 *   **Create a Form Field:**
@@ -296,9 +314,9 @@ Here are some common Artisan commands provided by Filament v3 for creating compo
 1.  **Admin:**
     *   Navigate to the admin login URL (e.g., `/admin`).
     *   Log in using the credentials created during setup.
-    *   Access the Admin Dashboard.
-    *   Use the navigation menu (usually on the left) to find "Houses" (or your resource name).
-    *   Perform Create, Read, Update, or Delete operations on house listings.
+    *   Access the Admin Dashboard (widgets like Stats, Creation Chart, City Chart should be visible).
+    *   Use the navigation menu (usually on the left) to find "Houses" and "Users".
+    *   Perform Create, Read, Update, or Delete operations on house listings and users.
 
 2.  **User:**
     *   Navigate to the main application URL (e.g., `/`).
