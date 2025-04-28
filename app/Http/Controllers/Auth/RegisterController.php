@@ -36,8 +36,8 @@ class RegisterController extends Controller
      // Redirect to the Filament admin panel dashboard after registration
      protected function redirectTo()
      {
-         //return AdminPanelProvider::getUrl();
-         return Filament::getPanel('admin')->getDashboardUrl();
+         return AdminPanelProvider::getUrl();
+         //return Filament::getPanel('admin')->getDashboardUrl();
      }
 
 

@@ -6,7 +6,6 @@ use App\Enums\ListingStatus;
 use App\Enums\ListingType;
 use App\Enums\RentalPeriod;
 use App\Filament\Resources\HouseResource\Pages;
-// use App\Filament\Resources\HouseResource\RelationManagers; // Use if needed later
 use App\Models\House;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -14,22 +13,18 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Get; // Import Get for reactive forms
-use Filament\Forms\Components\Section; // For grouping fields
-use Filament\Forms\Components\Tabs; // For better form organization
-use Filament\Tables\Enums\FiltersLayout; // For filter layout
+use Filament\Forms\Get;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Tabs;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
-use Illuminate\Support\Facades\Storage; // For file handling
-
+use Illuminate\Support\Facades\Storage;
 
 class HouseResource extends Resource
 {
     protected static ?string $model = House::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-home-modern';
-
-    protected static ?int $navigationSort = 1; // Position in sidebar
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -41,24 +36,42 @@ class HouseResource extends Resource
                         ->schema([
                             Forms\Components\Radio::make('listing_type')
                                 ->label('Listing Type')
-                                ->options(ListingType::class) // Use Enum directly
+                                ->options(ListingType::class)
                                 ->required()
-                                ->live() // Make reactive for conditional fields
-                                ->default(ListingType::SALE), // Sensible default
+                                ->live()
+                                ->default(ListingType::SALE),
                             Forms\Components\Select::make('listing_status')
                                 ->label('Listing Status')
-                                ->options(ListingStatus::class) // Use Enum directly
+                                ->options(ListingStatus::class)
                                 ->required()
-                                ->native(false) // Nicer dropdown
+                                ->native(false)
                                 ->default(ListingStatus::DRAFT),
+
+                            // Primary Photo (Single)
                             Forms\Components\FileUpload::make('primary_photo')
                                 ->label('Primary Photo')
                                 ->image()
-                                ->imageEditor() // Optional: enable image editor
-                                ->directory('house-photos') // Store in storage/app/public/house-photos
-                                ->visibility('public') // Make accessible via URL
+                                ->imageEditor()
+                                ->directory('house-photos/primary') // Optional: Separate directory
+                                ->visibility('public')
                                 ->required()
                                 ->columnSpanFull(),
+
+                            // --- START: Add Multiple File Upload ---
+                            Forms\Components\FileUpload::make('photos')
+                                ->label('Additional Photos (Gallery)')
+                                ->multiple() // Allow multiple files
+                                ->reorderable() // Allow reordering
+                                ->appendFiles() // Don't replace existing files on edit, add to them
+                                ->image()
+                                ->imageEditor()
+                                ->directory('house-photos/gallery') // Store gallery images separately
+                                ->visibility('public')
+                                // ->maxFiles(10) // Optional: Limit number of files
+                                // ->maxSize(1024 * 5) // Optional: Limit file size (e.g., 5MB)
+                                ->columnSpanFull(),
+                            // --- END: Add Multiple File Upload ---
+
                             Forms\Components\RichEditor::make('property_description')
                                 ->label('Property Description')
                                 ->required()
@@ -67,6 +80,7 @@ class HouseResource extends Resource
                     Tabs\Tab::make('Property & Location')
                         ->icon('heroicon-m-map-pin')
                         ->schema([
+                            // ... other fields remain the same ...
                             Section::make('Location Details')->columns(2)->schema([
                                 Forms\Components\TextInput::make('full_street_address')
                                     ->label('Full Street Address')
@@ -87,7 +101,7 @@ class HouseResource extends Resource
                             Section::make('Property Specifics')->columns(3)->schema([
                                 Forms\Components\Select::make('property_type')
                                     ->label('Property Type')
-                                    ->options([ // Add more as needed
+                                    ->options([
                                         'Single-Family Home' => 'Single-Family Home',
                                         'Condo' => 'Condo',
                                         'Apartment' => 'Apartment',
@@ -119,48 +133,41 @@ class HouseResource extends Resource
                     Tabs\Tab::make('Financials')
                         ->icon('heroicon-m-currency-dollar')
                         ->schema([
-                            // Conditional fields based on Listing Type
+                            // ... other fields remain the same ...
                             Forms\Components\TextInput::make('listing_price')
                                 ->label('Listing Price')
                                 ->numeric()
                                 ->prefix('$')
-                                ->required()
-                                // Show only when listing_type is 'For Sale'
-                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::SALE)
-                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::SALE),
-
+                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::SALE)
+                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::SALE),
                             Forms\Components\TextInput::make('rental_price')
                                 ->label('Rental Price')
                                 ->numeric()
                                 ->prefix('$')
-                                ->required()
-                                // Show only when listing_type is 'For Rent'
-                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
-                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
+                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
+                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
                             Forms\Components\Select::make('rental_period')
                                 ->label('Rental Period')
-                                ->options(RentalPeriod::class) // Use Enum
+                                ->options(RentalPeriod::class)
                                 ->default(RentalPeriod::MONTHLY)
                                 ->native(false)
-                                // Show only when listing_type is 'For Rent'
-                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
-                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
+                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
+                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
                             Forms\Components\TextInput::make('security_deposit')
                                 ->label('Security Deposit')
                                 ->numeric()
                                 ->prefix('$')
-                                // Show only when listing_type is 'For Rent'
-                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
-                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
+                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
+                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
                             Forms\Components\DatePicker::make('availability_date')
                                 ->label('Availability Date')
-                                // Show only when listing_type is 'For Rent'
-                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
-                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
+                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
+                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
                         ]),
                     Tabs\Tab::make('Contact Info')
                         ->icon('heroicon-m-user-circle')
                         ->schema([
+                            // ... other fields remain the same ...
                             Section::make('Contact Details')->columns(3)->schema([
                                 Forms\Components\TextInput::make('contact_person_name')
                                     ->label('Contact Person/Agent Name')
@@ -178,14 +185,17 @@ class HouseResource extends Resource
                                     ->maxLength(255),
                             ]),
                         ]),
-                ])->columnSpanFull(), // Ensure Tabs take full width
+                ])->columnSpanFull(),
             ]);
     }
 
+    // The table() method does not need changes for this,
+    // as we are typically only showing the primary photo in the list view.
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
+            // ... columns definition remains the same ...
+             ->columns([
                 Tables\Columns\ImageColumn::make('primary_photo_url') // Use accessor
                     ->label('Photo')
                     ->disk('public') // Specify the disk
@@ -211,27 +221,26 @@ class HouseResource extends Resource
                     ])
                     ->formatStateUsing(fn (ListingType $state): string => $state->getLabel()) // Format using Enum method
                     ->sortable(),
-                // Tables\Columns\BadgeColumn::make('listing_status') // <-- This is BadgeColumn
-                //     ->label('Status')
-                //     ->colors(ListingStatus::class) // <-- This is CORRECT for BadgeColumn
-                //     ->formatStateUsing(fn (ListingStatus $state): string => $state->getLabel())
-                //     ->sortable(),
-                 // Inside the table() method's ->columns([...]) array
-
+                Tables\Columns\BadgeColumn::make('listing_status') // <-- This is BadgeColumn
+                    ->label('Status')
+                    ->colors([ // ADD THIS EXPLICIT ARRAY MAP
+                        'success' => ListingStatus::ACTIVE,
+                        'warning' => ListingStatus::PENDING,
+                        'gray'    => ListingStatus::DRAFT,
+                        'info'    => fn ($state) => in_array($state, [ListingStatus::SOLD, ListingStatus::RENTED]), // Use closure for multiple states matching one color
+                    ])
+                    ->formatStateUsing(fn (ListingStatus $state): string => $state->getLabel())
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('listing_price')
                     ->label('Price')
                     ->money('USD') // Format as currency
                     ->sortable()
-                    // Add '?' to type hint and use '?->' nullsafe operator
                     ->visible(fn (?House $record): bool => $record?->listing_type === ListingType::SALE),
-
                 Tables\Columns\TextColumn::make('rental_price')
                     ->label('Rent')
                     ->money('USD')
-                    // Keep non-nullable here as formatStateUsing typically needs a record
-                    ->formatStateUsing(fn (House $record): string => $record->rental_price ? '$'.number_format($record->rental_price, 2).' / '.$record->rental_period->getLabel() : '-')
+                    ->formatStateUsing(fn (House $record): string => $record->rental_price ? '$'.number_format($record->rental_price, 2).' / '.$record->rental_period?->getLabel() : '-') // Added nullsafe operator for rental_period
                     ->sortable()
-                    // Add '?' to type hint and use '?->' nullsafe operator
                     ->visible(fn (?House $record): bool => $record?->listing_type === ListingType::RENT),
                 Tables\Columns\TextColumn::make('bedrooms')
                     ->label('Beds')
@@ -242,19 +251,20 @@ class HouseResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true), // Hide by default
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true), // Hide by default
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                // ... filters remain the same ...
                 SelectFilter::make('listing_type')
-                    ->options(ListingType::class), // Use Enum directly
+                    ->options(ListingType::class),
                 SelectFilter::make('listing_status')
-                    ->options(ListingStatus::class), // Use Enum directly
+                    ->options(ListingStatus::class),
                  SelectFilter::make('property_type')
-                     ->options([ // Add more as needed
+                     ->options([
                          'Single-Family Home' => 'Single-Family Home',
                          'Condo' => 'Condo',
                          'Apartment' => 'Apartment',
@@ -262,17 +272,19 @@ class HouseResource extends Resource
                          'Multi-Family' => 'Multi-Family',
                          'Land' => 'Land',
                      ])
-                     ->multiple() // Allow selecting multiple types
+                     ->multiple()
                      ->label('Property Type'),
-            ], layout: FiltersLayout::AboveContent) // Better filter placement
+            ], layout: FiltersLayout::AboveContent)
             ->actions([
-                Tables\Actions\ViewAction::make(), // Always available if user can viewAny/view
-                Tables\Actions\EditAction::make(), // Visibility controlled by policy
-                Tables\Actions\DeleteAction::make(), // Visibility controlled by policy
+                // ... actions remain the same ...
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
+                // ... bulk actions remain the same ...
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(), // Visibility controlled by policy
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -280,7 +292,7 @@ class HouseResource extends Resource
     public static function getRelations(): array
     {
         return [
-            // Define relation managers here if needed in the future
+            //
         ];
     }
 
@@ -289,16 +301,14 @@ class HouseResource extends Resource
         return [
             'index' => Pages\ListHouses::route('/'),
             'create' => Pages\CreateHouse::route('/create'),
-            // View page is often preferred over Edit for regular users
-            // Edit page implicitly includes viewing
-            'view' => Pages\ViewHouse::route('/{record}'), // Add View page route
+            'view' => Pages\ViewHouse::route('/{record}'),
             'edit' => Pages\EditHouse::route('/{record}/edit'),
         ];
     }
+}
 
     // Optional: Eager load relationships for performance
     // public static function getEloquentQuery(): Builder
     // {
     //     return parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
     // }
-}
