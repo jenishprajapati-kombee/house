@@ -29,3 +29,34 @@ Route::middleware('guest')->group(function () {
 // Route::get('/', function () {
 //     return view('welcome');
 // });
+
+Route::get('/download-example-csv', function () {
+    $headers = [
+        'Content-Type' => 'text/csv',
+        'Content-Disposition' => 'attachment; filename="users-example.csv"',
+    ];
+
+    $callback = function () {
+        $file = fopen('php://output', 'w');
+        // Add CSV headers matching the importer columns
+        fputcsv($file, ['name', 'email', 'password', 'mobile_number', 'nationality']);
+        // Add example rows with sample data
+        fputcsv($file, [
+            'John Doe',
+            'john@example.com',
+            '123456',
+            '9586714114',
+            'Indian'
+        ]);
+        fputcsv($file, [
+            'Jane Smith',
+            'jane@example.com',
+            '123456',
+            '9664696893',
+            'Indian'
+        ]);
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
+})->name('download-example-csv');
