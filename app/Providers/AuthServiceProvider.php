@@ -8,7 +8,7 @@ use Illuminate\Auth\Access\HandlesAuthorization; // Use correct trait
 
 class HousePolicy
 {
-     use HandlesAuthorization; // Use HandlesAuthorization
+    use HandlesAuthorization; // Use HandlesAuthorization
 
     /**
      * Determine whether the user can view any models.
@@ -24,7 +24,7 @@ class HousePolicy
      */
     public function view(User $user, House $house): bool
     {
-         // Both Admin and User can view a specific house
+        // Both Admin and User can view a specific house
         return $user->can('view house');
     }
 
@@ -42,7 +42,7 @@ class HousePolicy
      */
     public function update(User $user, House $house): bool
     {
-         // Only Admin can update
+        // Only Admin can update
         return $user->can('update house');
     }
 
@@ -51,7 +51,7 @@ class HousePolicy
      */
     public function delete(User $user, House $house): bool
     {
-         // Only Admin can delete
+        // Only Admin can delete
         return $user->can('delete house');
     }
 

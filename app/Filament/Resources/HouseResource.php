@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Enums\ListingStatus;
 use App\Enums\ListingType;
 use App\Enums\RentalPeriod;
+use App\Filament\Exports\HouseExporter;
+use App\Filament\Imports\HouseImporter;
 use App\Filament\Resources\HouseResource\Pages;
 use App\Models\House;
 use Filament\Forms;
@@ -19,6 +21,11 @@ use Filament\Forms\Components\Tabs;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Support\Facades\Storage;
+use Filament\Panel;
+use Filament\Tables\Actions\ExportAction;
+use Filament\Actions\Exports\Models\Export;
+use Filament\Actions\Imports\Models\Import;
+use Filament\Tables\Actions\ImportAction;
 
 class HouseResource extends Resource
 {
@@ -138,31 +145,31 @@ class HouseResource extends Resource
                                 ->label('Listing Price')
                                 ->numeric()
                                 ->prefix('$')
-                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::SALE)
-                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::SALE),
+                                ->required(fn(Get $get): bool => $get('listing_type') === ListingType::SALE)
+                                ->visible(fn(Get $get): bool => $get('listing_type') === ListingType::SALE),
                             Forms\Components\TextInput::make('rental_price')
                                 ->label('Rental Price')
                                 ->numeric()
                                 ->prefix('$')
-                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
-                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
+                                ->required(fn(Get $get): bool => $get('listing_type') === ListingType::RENT)
+                                ->visible(fn(Get $get): bool => $get('listing_type') === ListingType::RENT),
                             Forms\Components\Select::make('rental_period')
                                 ->label('Rental Period')
                                 ->options(RentalPeriod::class)
                                 ->default(RentalPeriod::MONTHLY)
                                 ->native(false)
-                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
-                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
+                                ->required(fn(Get $get): bool => $get('listing_type') === ListingType::RENT)
+                                ->visible(fn(Get $get): bool => $get('listing_type') === ListingType::RENT),
                             Forms\Components\TextInput::make('security_deposit')
                                 ->label('Security Deposit')
                                 ->numeric()
                                 ->prefix('$')
-                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
-                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
+                                ->required(fn(Get $get): bool => $get('listing_type') === ListingType::RENT)
+                                ->visible(fn(Get $get): bool => $get('listing_type') === ListingType::RENT),
                             Forms\Components\DatePicker::make('availability_date')
                                 ->label('Availability Date')
-                                ->required(fn (Get $get): bool => $get('listing_type') === ListingType::RENT)
-                                ->visible(fn (Get $get): bool => $get('listing_type') === ListingType::RENT),
+                                ->required(fn(Get $get): bool => $get('listing_type') === ListingType::RENT)
+                                ->visible(fn(Get $get): bool => $get('listing_type') === ListingType::RENT),
                         ]),
                     Tabs\Tab::make('Contact Info')
                         ->icon('heroicon-m-user-circle')
@@ -195,17 +202,17 @@ class HouseResource extends Resource
     {
         return $table
             // ... columns definition remains the same ...
-             ->columns([
+            ->columns([
                 Tables\Columns\ImageColumn::make('primary_photo_url') // Use accessor
                     ->label('Photo')
                     ->disk('public') // Specify the disk
                     ->defaultImageUrl(url('/images/placeholder-house.png')), // Optional placeholder
                 Tables\Columns\TextColumn::make('full_street_address')
                     ->label('Address')
-                    ->searchable()
+                    ->searchable(isIndividual: true)
                     ->sortable()
                     ->limit(30)
-                    ->tooltip(fn (House $record): string => $record->full_street_address), // Show full on hover
+                    ->tooltip(fn(House $record): string => $record->full_street_address), // Show full on hover
                 Tables\Columns\TextColumn::make('city')
                     ->searchable()
                     ->sortable(),
@@ -219,7 +226,7 @@ class HouseResource extends Resource
                         'primary' => ListingType::SALE,
                         'warning' => ListingType::RENT,
                     ])
-                    ->formatStateUsing(fn (ListingType $state): string => $state->getLabel()) // Format using Enum method
+                    ->formatStateUsing(fn(ListingType $state): string => $state->getLabel()) // Format using Enum method
                     ->sortable(),
                 Tables\Columns\BadgeColumn::make('listing_status') // <-- This is BadgeColumn
                     ->label('Status')
@@ -227,21 +234,21 @@ class HouseResource extends Resource
                         'success' => ListingStatus::ACTIVE,
                         'warning' => ListingStatus::PENDING,
                         'gray'    => ListingStatus::DRAFT,
-                        'info'    => fn ($state) => in_array($state, [ListingStatus::SOLD, ListingStatus::RENTED]), // Use closure for multiple states matching one color
+                        'info'    => fn($state) => in_array($state, [ListingStatus::SOLD, ListingStatus::RENTED]), // Use closure for multiple states matching one color
                     ])
-                    ->formatStateUsing(fn (ListingStatus $state): string => $state->getLabel())
+                    ->formatStateUsing(fn(ListingStatus $state): string => $state->getLabel())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('listing_price')
                     ->label('Price')
                     ->money('USD') // Format as currency
                     ->sortable()
-                    ->visible(fn (?House $record): bool => $record?->listing_type === ListingType::SALE),
+                    ->visible(fn(?House $record): bool => $record?->listing_type === ListingType::SALE),
                 Tables\Columns\TextColumn::make('rental_price')
                     ->label('Rent')
                     ->money('USD')
-                    ->formatStateUsing(fn (House $record): string => $record->rental_price ? '$'.number_format($record->rental_price, 2).' / '.$record->rental_period?->getLabel() : '-') // Added nullsafe operator for rental_period
+                    ->formatStateUsing(fn(House $record): string => $record->rental_price ? '$' . number_format($record->rental_price, 2) . ' / ' . $record->rental_period?->getLabel() : '-') // Added nullsafe operator for rental_period
                     ->sortable()
-                    ->visible(fn (?House $record): bool => $record?->listing_type === ListingType::RENT),
+                    ->visible(fn(?House $record): bool => $record?->listing_type === ListingType::RENT),
                 Tables\Columns\TextColumn::make('bedrooms')
                     ->label('Beds')
                     ->sortable(),
@@ -262,24 +269,43 @@ class HouseResource extends Resource
                 SelectFilter::make('listing_type')
                     ->options(ListingType::class),
                 SelectFilter::make('listing_status')
-                    ->options(ListingStatus::class),
-                 SelectFilter::make('property_type')
-                     ->options([
-                         'Single-Family Home' => 'Single-Family Home',
-                         'Condo' => 'Condo',
-                         'Apartment' => 'Apartment',
-                         'Townhouse' => 'Townhouse',
-                         'Multi-Family' => 'Multi-Family',
-                         'Land' => 'Land',
-                     ])
-                     ->multiple()
-                     ->label('Property Type'),
-            ], layout: FiltersLayout::AboveContent)
+                    ->options(ListingStatus::class)->searchable(),
+                SelectFilter::make('property_type')
+                    ->options([
+                        'Single-Family Home' => 'Single-Family Home',
+                        'Condo' => 'Condo',
+                        'Apartment' => 'Apartment',
+                        'Townhouse' => 'Townhouse',
+                        'Multi-Family' => 'Multi-Family',
+                        'Land' => 'Land',
+                    ])
+                    ->multiple()
+                    ->label('Property Type'),
+            ])
             ->actions([
                 // ... actions remain the same ...
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+            ])
+            ->headerActions([
+                ExportAction::make()
+                    ->exporter(HouseExporter::class)
+                    ->label('Export')
+                    ->icon('heroicon-m-arrow-down-on-square')
+                    ->color('success')
+                    ->modalHeading('Export Houses')
+                    ->modalDescription('Export houses to a CSV file')
+                    ->fileName(fn(Export $export): string => "houses-{$export->getKey()}.csv"),
+                ImportAction::make()
+                    ->importer(HouseImporter::class)
+                    ->label('Import')
+                    ->icon('heroicon-m-arrow-up-on-square')
+                    ->color('success')
+                    ->modalHeading('Import Houses')
+                    ->modalDescription('Import houses from a CSV file')
+                //->fileName(fn(Import $import): string => "houses-{$import->getKey()}.csv"),
+
             ])
             ->bulkActions([
                 // ... bulk actions remain the same ...
@@ -304,6 +330,13 @@ class HouseResource extends Resource
             'view' => Pages\ViewHouse::route('/{record}'),
             'edit' => Pages\EditHouse::route('/{record}/edit'),
         ];
+    }
+
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            // ...
+            ->globalSearch(false);
     }
 }
 
