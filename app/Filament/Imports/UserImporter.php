@@ -17,14 +17,18 @@ class UserImporter extends Importer
             ImportColumn::make('name')
                 ->requiredMapping()
                 ->rules(['required', 'max:255']),
+
             ImportColumn::make('email')
                 ->requiredMapping()
-                ->rules(['required', 'email', 'max:255']),
+                ->rules(['required', 'email', 'max:255', 'unique:users,email']),
+
             ImportColumn::make('password')
                 ->requiredMapping()
                 ->rules(['required', 'max:255']),
+
             ImportColumn::make('mobile_number')
-                ->rules(['max:255']),
+                ->rules(['max:255', 'unique:users,mobile_number']),
+
             ImportColumn::make('nationality')
                 ->rules(['max:255']),
         ];
