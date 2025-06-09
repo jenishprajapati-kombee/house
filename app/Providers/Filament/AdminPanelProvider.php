@@ -18,7 +18,7 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Resources\HouseResource\Widgets\HouseCreationChart; // <-- Import
-use App\Filament\Resources\HouseResource\Widgets\HousesByCityChart; 
+use App\Filament\Resources\HouseResource\Widgets\HousesByCityChart;
 // Import your Widget
 use App\Filament\Resources\HouseResource\Widgets\HouseStatsOverview;
 
@@ -41,6 +41,7 @@ class AdminPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            ->databaseNotifications()
             ->widgets([
                 // Widgets\AccountWidget::class, // Default widgets
                 // Widgets\FilamentInfoWidget::class, // Default widgets

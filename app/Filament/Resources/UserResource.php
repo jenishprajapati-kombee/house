@@ -109,36 +109,26 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')->sortable(), // Good to have ID
+                //TextColumn::make('id')->sortable(), // Good to have ID
                 TextColumn::make('name')
                     ->searchable()
+                    ->searchable(isIndividual: true)
                     ->sortable(),
                 TextColumn::make('email')
-                    ->searchable()
+                    ->searchable(isIndividual: true)
                     ->sortable(),
                 TextColumn::make('mobile_number')
                     ->searchable()
+                    ->searchable(isIndividual: true)
                     ->placeholder('N/A'), // Show placeholder if null
-                // IconColumn::make('email_verified_at')
-                //     ->label('Verified')
-                //     ->boolean() // Treats non-null as true, null as false
-                //     ->trueIcon('heroicon-o-check-badge')
-                //     ->falseIcon('heroicon-o-x-circle')
-                //     ->trueColor('success')
-                //     ->falseColor('danger')
-                //     ->sortable(),
-                //  // Add Roles column if using Spatie Permissions
-                //  // TextColumn::make('roles.name')
-                //  //    ->badge() // Display roles as badges
-                //  //    ->searchable(),
-                // TextColumn::make('created_at')
-                //     ->dateTime()
-                //     ->sortable()
-                //     ->toggleable(isToggledHiddenByDefault: true), // Hide by default
-                // TextColumn::make('updated_at')
-                //     ->dateTime()
-                //     ->sortable()
-                //     ->toggleable(isToggledHiddenByDefault: true), // Hide by default
+                TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true), // Hide by default
+                TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true), // Hide by default
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('email_verified_at')
